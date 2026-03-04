@@ -321,10 +321,11 @@ void ggml_cuda_op_set_rows(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
 
     GGML_ASSERT(src0->type == GGML_TYPE_F32);
     GGML_ASSERT(src1->type == GGML_TYPE_I64 || src1->type == GGML_TYPE_I32);
+const int cc = ggml_cuda_info().devices[ggml_cuda_get_device()].cc;
 
     if (src1->type == GGML_TYPE_I64) {
-        set_rows_cuda<float, int64_t>(ctx, src0, src1, dst);
+        set_rows_cuda<float, int64_t>(ctx, src0, src1, dst, cc);
     } else {
-        set_rows_cuda<float, int32_t>(ctx, src0, src1, dst);
+        set_rows_cuda<float, int32_t>(ctx, src0, src1, dst, cc);
     }
 }
