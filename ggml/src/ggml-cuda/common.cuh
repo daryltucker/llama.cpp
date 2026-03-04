@@ -45,6 +45,7 @@
 #define CUDART_HMASK  12000 // CUDA 12.0, min. ver. for half2 -> uint mask comparisons
 
 #define GGML_CUDA_CC_PASCAL          600
+#define GGML_CUDA_CC_KEPLER          300
 #define GGML_CUDA_CC_DP4A            610 // minimum compute capability for __dp4a, an intrinsic for byte-wise dot products
 #define GGML_CUDA_CC_VOLTA           700
 #define GGML_CUDA_CC_TURING          750
