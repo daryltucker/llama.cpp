@@ -387,7 +387,8 @@ struct ggml_cuda_pool_leg : public ggml_cuda_pool {
             return ptr;
         }
         void * ptr;
-        size_t look_ahead_size = (size_t) (1.05 * size);
+        const int cc = ggml_cuda_info().devices[device].cc;
+        size_t look_ahead_size = (size_t) ((cc == 37 ? 1.01 : 1.05) * size);
         look_ahead_size = 256 * ((look_ahead_size + 255)/256);
         ggml_cuda_set_device(device);
         CUDA_CHECK(ggml_cuda_device_malloc(&ptr, look_ahead_size, device));
