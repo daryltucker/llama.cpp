@@ -1375,7 +1375,16 @@ static void ggml_cuda_op_mul_mat_cublas(
 static void ggml_cuda_set_peer_access(const int n_tokens, int main_device) {
     static bool peer_access_enabled = false;
 
-    const bool enable_peer_access = n_tokens <= GGML_CUDA_PEER_MAX_BATCH_SIZE;
+    // Detect K80 systems for enhanced P2P transfers
+    bool is_k80_system = false;
+    for (int id = 0; id < ggml_backend_cuda_get_device_count(); ++id) {
+        if (ggml_cuda_info().devices[id].cc == 37) {
+            is_k80_system = true;
+            break;
+        }
+    }
+
+    const bool enable_peer_access = n_tokens <= GGML_CUDA_PEER_MAX_BATCH_SIZE || is_k80_system;
 
     if (peer_access_enabled == enable_peer_access) {
         return;
