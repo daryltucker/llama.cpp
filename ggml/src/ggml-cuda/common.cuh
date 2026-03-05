@@ -705,12 +705,12 @@ static __device__ __forceinline__ int ggml_cuda_dp4a(const int a, const int b, i
 }
 
 static __device__ __forceinline__ void ggml_cuda_mad(float & acc, const float v, const float u) {
-    acc += v*u;
+    acc = fmaf(v, u, acc);
 }
 
 static __device__ __forceinline__ void ggml_cuda_mad(float & acc, const float2 v, const float2 u) {
-    acc += v.x*u.x;
-    acc += v.y*u.y;
+    acc = fmaf(v.x, u.x, acc);
+    acc = fmaf(v.y, u.y, acc);
 }
 
 #if defined(GGML_USE_HIP) && (defined(RDNA2) || defined(RDNA3) || defined(RDNA4) || defined(__gfx906__) || defined(CDNA))
@@ -735,7 +735,7 @@ static __device__ __forceinline__ void ggml_cuda_mad(float & acc, const half2 v,
 
 static __device__ __forceinline__ void ggml_cuda_mad(half2 & acc, const half2 v, const half2 u) {
 #ifdef FAST_FP16_AVAILABLE
-    acc += v*u;
+    acc = fmaf(v, u, acc);
 #else
     const float2 tmpv = __half22float2(v);
     const float2 tmpu = __half22float2(u);

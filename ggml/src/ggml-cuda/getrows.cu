@@ -97,7 +97,8 @@ static void get_rows_cuda_q(
         const int64_t ne00, const size_t nb01, const size_t nb02, const size_t nb03,
         const int64_t ne10, const int64_t ne11, const int64_t ne12, const size_t nb10, const size_t nb11, const size_t nb12,
         const size_t nb1, const size_t nb2, const size_t nb3,
-        cudaStream_t stream) {
+        cudaStream_t stream, const int cc) {
+    (void)cc; // unused but required for API consistency
     const dim3 block_dims(CUDA_GET_ROWS_BLOCK_SIZE, 1, 1);
     const int block_num_y = (ne00 + 2*CUDA_GET_ROWS_BLOCK_SIZE - 1) / (2*CUDA_GET_ROWS_BLOCK_SIZE);
     const dim3 block_nums(ne10, MIN(block_num_y, UINT16_MAX), MIN(ne11*ne12, UINT16_MAX));
@@ -130,7 +131,8 @@ static void get_rows_cuda_float(
         const int64_t ne00, const size_t nb01, const size_t nb02, const size_t nb03,
         const int64_t ne10, const int64_t ne11, const int64_t ne12, const size_t nb10, const size_t nb11, const size_t nb12,
         const size_t nb1, const size_t nb2, const size_t nb3,
-        cudaStream_t stream) {
+        cudaStream_t stream, const int cc) {
+    (void)cc; // unused but required for API consistency
     const dim3 block_dims(CUDA_GET_ROWS_BLOCK_SIZE, 1, 1);
     const int block_num_y = (ne00 + CUDA_GET_ROWS_BLOCK_SIZE - 1) / CUDA_GET_ROWS_BLOCK_SIZE;
     const dim3 block_nums(ne10, MIN(block_num_y, UINT16_MAX), MIN(ne11*ne12, UINT16_MAX));
@@ -161,7 +163,8 @@ static void ggml_cuda_get_rows_switch_src0_type(
         const int64_t ne00, const size_t nb01, const size_t nb02, const size_t nb03,
         const int64_t ne10, const int64_t ne11, const int64_t ne12, const size_t nb10, const size_t nb11, const size_t nb12,
         const size_t nb1, const size_t nb2, const size_t nb3,
-        cudaStream_t stream) {
+        cudaStream_t stream, const int cc) {
+    (void)cc; // unused but required for API consistency
     switch (src0_type) {
         case GGML_TYPE_F16:
             get_rows_cuda_float((const half *) src0_d, src1_d, dst_d,
@@ -211,7 +214,8 @@ void get_rows_cuda(
         int64_t ne00, size_t nb01, size_t nb02, size_t nb03,
         int64_t ne10, int64_t ne11, int64_t ne12, size_t nb10, size_t nb11, size_t nb12,
         size_t nb1, size_t nb2, size_t nb3,
-        cudaStream_t stream) {
+        cudaStream_t stream, const int cc) {
+    (void)cc; // unused but required for API consistency
     switch (dst_type) {
         case GGML_TYPE_F32:
             ggml_cuda_get_rows_switch_src0_type(src0_d, src0_type, src1_d, (float *) dst_d,
@@ -243,6 +247,8 @@ void ggml_cuda_op_get_rows(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
 
     GGML_TENSOR_BINARY_OP_LOCALS
 
+    const int cc = ggml_cuda_info().devices[ggml_cuda_get_device()].cc;
+
     GGML_ASSERT(src1->type == GGML_TYPE_I32);
     GGML_ASSERT(ne13 == 1);
 
@@ -259,6 +265,8 @@ void ggml_cuda_op_get_rows_back(ggml_backend_cuda_context & ctx, ggml_tensor * d
     const ggml_tensor * src1 = dst->src[1]; // src1 in forward pass
 
     GGML_TENSOR_BINARY_OP_LOCALS
+
+    const int cc = ggml_cuda_info().devices[ggml_cuda_get_device()].cc;
 
     const float   * src0_d = (const float   *) src0->data;
     const int32_t * src1_d = (const int32_t *) src1->data;
