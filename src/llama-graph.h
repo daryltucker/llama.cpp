@@ -4,6 +4,7 @@
 #include "llama-batch.h"
 #include "llama-hparams.h"
 #include "llama-adapter.h"
+#include "xkv-sidecar.h"
 
 #include <cstdint>
 #include <vector>
@@ -543,6 +544,7 @@ struct llm_graph_params {
     const llama_adapter_loras    * loras;
     const llama_memory_context_i * mctx;
     const llama_cross            * cross;
+    const xkv_sidecar            * xkv_sc = nullptr; // xKV cross-layer KV basis sidecar; nullptr = disabled
 
     std::map<llama_seq_id, llama_sampler *> samplers;
 
@@ -625,11 +627,13 @@ struct llm_graph_params {
         return
             cparams.embeddings  == other.cparams.embeddings  &&
             cparams.causal_attn == other.cparams.causal_attn &&
-            arch  == other.arch  &&
-            gtype == other.gtype &&
-            cvec  == other.cvec  &&
-            loras == other.loras &&
-            cross == other.cross;
+            arch   == other.arch   &&
+            gtype  == other.gtype  &&
+            cvec   == other.cvec   &&
+            loras  == other.loras  &&
+            cross  == other.cross  &&
+            // xKV toggles extra matmul nodes; graph topology differs when enabled/disabled
+            (xkv_sc != nullptr) == (other.xkv_sc != nullptr);
     }
 };
 
@@ -751,6 +755,7 @@ struct llm_graph_context {
     const llama_adapter_loras    * loras;
     const llama_memory_context_i * mctx;
     const llama_cross            * cross;
+    const xkv_sidecar            * xkv_sc;
 
     std::map<llama_seq_id, llama_sampler *> samplers;
 

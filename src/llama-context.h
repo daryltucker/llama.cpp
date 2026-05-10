@@ -116,6 +116,9 @@ struct llama_context {
                 int32_t   il_start,
                 int32_t   il_end);
 
+    // Load (or unload) the xKV cross-layer KV basis sidecar. path=nullptr to unload.
+    bool set_xkv_sidecar(const char * path);
+
     // process a single ubatch with a specific graph type
     // if memory_context is provided, it will be applied first to the context's memory
     // ret contains the status of the graph computation
@@ -260,6 +263,8 @@ private:
 
     llama_adapter_cvec_ptr  cvec;
     llama_adapter_loras_ptr loras;
+
+    xkv_sidecar * xkv_sc = nullptr; // loaded from --xkv-sidecar; nullptr = disabled
 
     llama_cross cross; // TODO: tmp for handling cross-attention - need something better probably
 

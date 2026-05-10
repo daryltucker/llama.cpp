@@ -36,6 +36,8 @@ add_library(llama
             unicode-data.cpp
             unicode.cpp
             unicode.h
+            xkv-sidecar.h
+            xkv-sidecar.cpp
             models/afmoe.cpp
             models/apertus.cpp
             models/arcee.cpp

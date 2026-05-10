@@ -706,6 +706,14 @@ extern "C" {
                          int32_t   il_start,
                          int32_t   il_end);
 
+    // Load an xKV cross-layer KV basis sidecar from a .xkv file (produced by tools/xkv_precompute_basis.py).
+    // When loaded, every decode step applies a rank-r projection to K and V before attention.
+    // Returns 0 on success, -1 if the file cannot be loaded.
+    // Pass path = nullptr to unload any currently loaded sidecar.
+    LLAMA_API int32_t llama_context_load_xkv_sidecar(
+            struct llama_context * ctx,
+                      const char * path);
+
     //
     // Memory
     //

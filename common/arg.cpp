@@ -2536,6 +2536,15 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
+        {"--xkv-sidecar"}, "FNAME",
+        "xKV cross-layer KV basis sidecar file (.xkv produced by tools/xkv_precompute_basis.py)\n"
+        "applies rank-r projection to K and V at attention time, reducing effective KV entropy\n"
+        "see arxiv 2503.18893 for theory; target hardware: K80 (bandwidth-bound)",
+        [](common_params & params, const std::string & value) {
+            params.xkv_sidecar_path = value;
+        }
+    ));
+    add_opt(common_arg(
         {"-a", "--alias"}, "STRING",
         "set model name aliases, comma-separated (to be used by API)",
         [](common_params & params, const std::string & value) {

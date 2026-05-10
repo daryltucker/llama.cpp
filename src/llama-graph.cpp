@@ -945,6 +945,7 @@ llm_graph_context::llm_graph_context(const llm_graph_params & params) :
     loras            (params.loras),
     mctx             (params.mctx),
     cross            (params.cross),
+    xkv_sc           (params.xkv_sc),
     samplers         (params.samplers),
     cb_func          (params.cb),
     res              (params.res),
@@ -1866,6 +1867,36 @@ ggml_tensor * llm_graph_context::build_attn_mha(
     q = ggml_permute(ctx0, q, 0, 2, 1, 3);
     k = ggml_permute(ctx0, k, 0, 2, 1, 3);
     v = ggml_permute(ctx0, v, 0, 2, 1, 3);
+
+    // xKV: rank-r projection of K and V into the cross-layer shared subspace.
+    // Requires a precomputed basis sidecar; see src/xkv-sidecar.h and tools/xkv_precompute_basis.py.
+    // k shape after permute: [n_embd_head_k, n_head_kv, n_kv, n_stream]
+    // Projection: latent = basis^T @ k_flat   (ggml_mul_mat(basis, k_flat))
+    //             k_approx = basis @ latent    (ggml_mul_mat(ggml_transpose(basis), latent))
+    if (xkv_sc && il >= 0 && il < xkv_sc->n_layers) {
+        const int64_t kv_dim_val   = n_embd_head_k * n_head_kv;
+        const int64_t n_kv_total   = k->ne[2] * k->ne[3];  // n_kv * n_stream
+
+        ggml_tensor * bK = xkv_sc->get_K(il);  // [kv_dim, rank]
+        ggml_tensor * bV = xkv_sc->get_V(il);  // [kv_dim, rank]
+
+        if (bK && kv_dim_val == xkv_sc->kv_dim) {
+            // K projection
+            ggml_tensor * k_flat   = ggml_reshape_2d(ctx0, ggml_cont(ctx0, k), kv_dim_val, n_kv_total);
+            ggml_tensor * k_latent = ggml_mul_mat(ctx0, bK, k_flat);        // [rank, n_kv_total]
+            ggml_tensor * k_approx = ggml_mul_mat(ctx0, ggml_transpose(ctx0, bK), k_latent); // [kv_dim, n_kv_total]
+            cb(k_approx, "k_xkv", il);
+            k = ggml_reshape_4d(ctx0, k_approx, n_embd_head_k, n_head_kv, k->ne[2], k->ne[3]);
+        }
+        if (bV && kv_dim_val == xkv_sc->kv_dim) {
+            // V projection (same structure)
+            ggml_tensor * v_flat   = ggml_reshape_2d(ctx0, ggml_cont(ctx0, v), kv_dim_val, n_kv_total);
+            ggml_tensor * v_latent = ggml_mul_mat(ctx0, bV, v_flat);
+            ggml_tensor * v_approx = ggml_mul_mat(ctx0, ggml_transpose(ctx0, bV), v_latent);
+            cb(v_approx, "v_xkv", il);
+            v = ggml_reshape_4d(ctx0, v_approx, n_embd_head_k, n_head_kv, v->ne[2], v->ne[3]);
+        }
+    }
 
     ggml_tensor * cur;
 

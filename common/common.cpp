@@ -1286,6 +1286,13 @@ common_init_result_ptr common_init_from_params(common_params & params) {
         params.ctx_shift = false;
     }
 
+    if (!params.xkv_sidecar_path.empty()) {
+        if (llama_context_load_xkv_sidecar(lctx, params.xkv_sidecar_path.c_str()) != 0) {
+            LOG_ERR("%s: failed to load xKV sidecar '%s'\n", __func__, params.xkv_sidecar_path.c_str());
+            return res;
+        }
+    }
+
     if (!params.control_vectors.empty()) {
         if (params.control_vector_layer_start <= 0) params.control_vector_layer_start = 1;
         if (params.control_vector_layer_end   <= 0) params.control_vector_layer_end   = llama_model_n_layer(model);

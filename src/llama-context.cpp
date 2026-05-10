@@ -1,4 +1,5 @@
 #include "llama-context.h"
+#include "xkv-sidecar.h"
 
 #include "llama-arch.h"
 #include "llama-impl.h"
@@ -382,6 +383,7 @@ llama_context::~llama_context() {
         }
     }
     ggml_opt_free(opt_ctx);
+    xkv_sidecar_free(xkv_sc);
 }
 
 void llama_context::sched_reserve() {
@@ -2158,6 +2160,7 @@ llm_graph_params llama_context::graph_params(
         /*.loras       =*/ loras.get(),
         /*.mctx        =*/ mctx,
         /*.cross       =*/ &cross,
+        /*.xkv_sc      =*/ xkv_sc,
         /*.samplers    =*/ sampling.samplers,
         /*.n_outputs   =*/ n_outputs,
         /*.cb          =*/ graph_get_cb(),
@@ -3191,6 +3194,22 @@ int32_t llama_set_adapter_cvec(
     bool res = ctx->set_adapter_cvec(data, len, n_embd, il_start, il_end);
 
     return res ? 0 : -1;
+}
+
+bool llama_context::set_xkv_sidecar(const char * path) {
+    xkv_sidecar_free(xkv_sc);
+    xkv_sc = nullptr;
+    if (!path || path[0] == '\0') {
+        return true;
+    }
+    xkv_sc = xkv_sidecar_load(path);
+    return xkv_sc != nullptr;
+}
+
+int32_t llama_context_load_xkv_sidecar(
+        llama_context * ctx,
+          const char  * path) {
+    return ctx->set_xkv_sidecar(path) ? 0 : -1;
 }
 
 //
